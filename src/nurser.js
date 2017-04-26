@@ -1,6 +1,6 @@
 
 import React, { Component } from 'react';
-import { ScrollView, View, Text, StyleSheet, TouchableHighlight } from 'react-native';
+import { ScrollView, View, Text, StyleSheet, Button, TouchableHighlight } from 'react-native';
 
 const nursingMethods = {
     bottle: 'bottle',
@@ -8,6 +8,13 @@ const nursingMethods = {
     right: 'right',
     food: 'food'
 };
+
+function _doubleDigit(n){
+    if(n < 10) {
+        return '0' + n.toString();
+    }
+    return n.toString();
+}
 
 class Feeding extends Component {
 
@@ -22,12 +29,58 @@ class Feeding extends Component {
             startString = '';
         startString += startTime.getDate() + '/' + (startTime.getMonth()+1).toString() + ' ' + startTime.getHours() + ':' + startTime.getMinutes();
 
-        return <Text key={startString} style={styles[currentFeeding.method]} key={currentFeeding.start.toString()}>{currentFeeding.method}: {startString} - {hours}:{minutes}:{seconds}</Text>;
+        return <Text style={styles[currentFeeding.method]} key={currentFeeding.start.toString()}>{currentFeeding.method}: {startString} - {hours}:{minutes}:{seconds}</Text>;
     }
 
     render() {
         let comp = this._getFeedingString(this.props.feeding);
-        return comp;
+        return (<View style={styles.feedingContainer}>
+            <Text style={styles.button}>Right</Text>
+            {comp}
+        </View>);
+    }
+}
+
+class FeedingTimer extends Component {
+
+    constructor(){
+        super();
+        this.state = {
+            time: 0
+        }
+    }
+
+    componentDidMount() {
+        this.myInterval = setInterval(this._updateTimer.bind(this), 500);
+    }
+
+    componentWillUnmount() {
+        clearInterval(this.myInterval);
+    }
+
+    _updateTimer() {
+        if(!this.props.current){
+            this.setState({
+                time: 0
+            });
+            return;
+        }
+        let delta = (new Date() - this.props.current);
+        var seconds = Math.floor(delta/1000);
+        var minutes = Math.floor(seconds/60);
+        seconds = seconds%60;
+        var hours = Math.floor(minutes/60);
+        minutes = minutes%60;
+        this.setState({
+            time: _doubleDigit(hours) + ':' + _doubleDigit(minutes) + ':' + _doubleDigit(seconds),
+        });
+    } 
+
+    render(){
+        if(!this.props.current || !this.state.time) {
+            return <Text style={styles.timer}>00:00:00</Text>
+        }
+        return (<Text style={styles.timer}>{this.state.time}</Text>)
     }
 }
 
@@ -78,31 +131,43 @@ export default class nurser extends Component {
     render() {
         var feedings = [];
         
-        for(var i = 0; i < this.state.feedings.length; i++){
+        for(var i = this.state.feedings.length-1; i>= 0; i--){
             var currentFeeding = this.state.feedings[i];
             
-            feedings.push(<Feeding feeding={currentFeeding} />);
+            feedings.push(<Feeding key={i+currentFeeding.start.toString()} feeding={currentFeeding} />);
         }
 
         return (
             <View style={styles.container}>
-                <ScrollView style={styles.feedingsList}>
-                    {feedings}
-                </ScrollView>
-                <View style={styles.middleBox} />
+                <View style={styles.feedingsList}>
+                    <ScrollView>
+                        {feedings}
+                    </ScrollView>
+                </View>
+                <View style={styles.middleBox}>
+                    <FeedingTimer current={this.state.start} />
+                </View>
                 <View style={styles.buttonContainer}>
-                    <TouchableHighlight onPress={(() => {this.handlePress.call(this, nursingMethods.left)}).bind(this)}>
-                        <Text>Left</Text>
-                    </TouchableHighlight>
-                    <TouchableHighlight onPress={(() => {this.handlePress.call(this, nursingMethods.bottle)}).bind(this)}>
-                        <Text>Bottle</Text>
-                    </TouchableHighlight>
-                    <TouchableHighlight onPress={(() => {this.handlePress.call(this, nursingMethods.food)}).bind(this)}>
-                        <Text>Food</Text>
-                    </TouchableHighlight>
-                    <TouchableHighlight onPress={(() => {this.handlePress.call(this, nursingMethods.right)}).bind(this)}>
-                        <Text>Right</Text>
-                    </TouchableHighlight>
+                    <View style={styles.buttonVerticalAligner}>
+                        <TouchableHighlight activeOpacity={0} onPress={(() => {this.handlePress.call(this, nursingMethods.left)}).bind(this)}>
+                            <Text style={styles.button}>Left</Text>
+                        </TouchableHighlight>
+                    </View>
+                    <View style={styles.buttonVerticalAligner}>
+                        <TouchableHighlight activeOpacity={0} onPress={(() => {this.handlePress.call(this, nursingMethods.food)}).bind(this)}>
+                            <Text style={styles.button}>Food</Text>
+                        </TouchableHighlight>
+                    </View>
+                    <View style={styles.buttonVerticalAligner}>
+                        <TouchableHighlight activeOpacity={0} onPress={(() => {this.handlePress.call(this, nursingMethods.bottle)}).bind(this)}>
+                            <Text style={styles.button}>Bottle</Text>
+                        </TouchableHighlight>
+                    </View>
+                    <View style={styles.buttonVerticalAligner}>
+                        <TouchableHighlight activeOpacity={0} onPress={(() => {this.handlePress.call(this, nursingMethods.right)}).bind(this)}>
+                            <Text style={styles.button}>Right</Text>
+                        </TouchableHighlight>
+                    </View>
                 </View>
             </View>
         );
@@ -114,26 +179,29 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     feedingsList: {
-        flex: 1,
+        flex: 4,
         backgroundColor: 'powderblue'
     },
     middleBox: {
-        flex: 2,
+        flex: 1,
         backgroundColor: 'skyblue'
     },
     buttonContainer: {
         flex: 1,
         flexDirection: 'row',
-        justifyContent: 'space-between',
+        justifyContent: 'space-around',
         backgroundColor: 'steelblue'
     },
-    leftFeeding: {
-        textAlign: 'left'
+    buttonVerticalAligner: {
+        flex: 1,
+        flexDirection: 'column',
+        justifyContent: 'center',
+        alignItems: 'center',
     },
-    rightFeeding: {
-        textAlign: 'right'
+    feedingContainer: {
+        flex: 1,
+        flexDirection: 'row'
     },
-
     bottle: {
         color: 'white'
     },
@@ -145,5 +213,18 @@ const styles = StyleSheet.create({
     },
     food: {
         color: 'green'
+    },
+    button: {
+        width: 60,
+        height: 60,
+        textAlign: 'center',
+        lineHeight: 38,
+        backgroundColor: 'white',
+        borderRadius: 30
+    },
+    timer: {
+        width: '100%',
+        fontSize: 42,
+        textAlign: 'center'
     }
 })
