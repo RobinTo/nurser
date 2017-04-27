@@ -61,7 +61,7 @@ export default class Nurser extends Component {
             length: now - this.state.start
         };
         let newFeedings = this.state.feedings.slice(0);
-        newFeedings.unshift(feeding);
+        newFeedings.push(feeding);
         this.setState({
             timing: false,
             start: null,
