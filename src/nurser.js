@@ -26,17 +26,33 @@ class Feeding extends Component {
         minutes = minutes%60;
 
         var startTime = currentFeeding.start,
-            startString = '';
-        startString += startTime.getDate() + '/' + (startTime.getMonth()+1).toString() + ' ' + startTime.getHours() + ':' + startTime.getMinutes();
+            startString = '',
+            endTime = currentFeeding.end,
+            endString = '';
+        startString += _doubleDigit(startTime.getHours()) + ':' + _doubleDigit(startTime.getMinutes());
+        if(!endTime){
+            endString = '-';
+        } else {
+            endString += _doubleDigit(endTime.getHours()) + ':' + _doubleDigit(endTime.getMinutes());
+        }
 
-        return <Text style={styles[currentFeeding.method]} key={currentFeeding.start.toString()}>{currentFeeding.method}: {startString} - {hours}:{minutes}:{seconds}</Text>;
+        return (<View>
+            <Text style={styles.feedingTimes} key={currentFeeding.start.toString()}>{startString} - {endString}</Text>
+            <Text style={styles.feedingDuration}>Duration {_doubleDigit(hours)}:{_doubleDigit(minutes)}:{_doubleDigit(seconds)}</Text>
+        </View>);
     }
 
     render() {
         let comp = this._getFeedingString(this.props.feeding);
+
+        let methodString = this.props.feeding.method.substr(0, 1).toUpperCase() + this.props.feeding.method.substr(1);
         return (<View style={styles.feedingContainer}>
-            <Text style={styles.button}>Right</Text>
-            {comp}
+            <View style={[styles.verticalAligner, styles.horizontalAligner]}>
+                <Text style={styles.button}>{methodString}</Text>
+            </View>
+            <View style={[styles.verticalAligner, styles.flex3]}>
+                {comp}
+            </View>
         </View>);
     }
 }
@@ -56,6 +72,10 @@ class FeedingTimer extends Component {
 
     componentWillUnmount() {
         clearInterval(this.myInterval);
+    }
+
+    setNativeProps (nativeProps) {
+        this._root.setNativeProps(nativeProps);
     }
 
     _updateTimer() {
@@ -78,9 +98,9 @@ class FeedingTimer extends Component {
 
     render(){
         if(!this.props.current || !this.state.time) {
-            return <Text style={styles.timer}>00:00:00</Text>
+            return <Text ref={component => this._root = component} style={styles.timer}>00:00:00</Text>
         }
-        return (<Text style={styles.timer}>{this.state.time}</Text>)
+        return (<Text ref={component => this._root = component} style={styles.timer}>{this.state.time}</Text>)
     }
 }
 
@@ -105,6 +125,9 @@ export default class nurser extends Component {
     }
 
     _endFeeding(){
+        if(!this.state.timing){
+            return;
+        }
         var now = new Date();
         var feeding = {
             method: this.state.currentMethod,
@@ -130,11 +153,29 @@ export default class nurser extends Component {
 
     render() {
         var feedings = [];
-        
+        let month = -1;
+        let day = -1;
         for(var i = this.state.feedings.length-1; i>= 0; i--){
             var currentFeeding = this.state.feedings[i];
-            
+            if(currentFeeding.start.getMonth() > month || currentFeeding.start.getDate() > day){
+                month = currentFeeding.start.getMonth();
+                day = currentFeeding.start.getDate();
+                feedings.push(<Text key={currentFeeding.end.toString()} style={styles.feedingTitle}>{currentFeeding.start.getMonth()+1}/{currentFeeding.start.getDate()}</Text>);
+            }
             feedings.push(<Feeding key={i+currentFeeding.start.toString()} feeding={currentFeeding} />);
+        }
+
+        let feedingTimer = null,
+            timerText = '';
+        if(this.state.timing){
+            timerText = 'Current feeding';
+            feedingTimer = <FeedingTimer current={this.state.start} />;
+        } else if (this.state.feedings.length > 0){
+            timerText = 'Time since last feeding';
+            feedingTimer = <FeedingTimer current={this.state.feedings.slice(-1)[0].end} />;
+        } else {
+            timerText = 'Start feeding';
+            feedingTimer = <FeedingTimer current={null} />;
         }
 
         return (
@@ -145,25 +186,32 @@ export default class nurser extends Component {
                     </ScrollView>
                 </View>
                 <View style={styles.middleBox}>
-                    <FeedingTimer current={this.state.start} />
+                    <View style={styles.verticalAligner}>
+                        <TouchableHighlight onPress={this._endFeeding.bind(this)}>
+                            <View style={styles.horizontalAligner}>
+                                <Text style={styles.timerTitle}>{timerText}</Text>
+                                {feedingTimer}
+                            </View>
+                        </TouchableHighlight>
+                    </View>
                 </View>
                 <View style={styles.buttonContainer}>
-                    <View style={styles.buttonVerticalAligner}>
+                    <View style={[styles.verticalAligner, styles.horizontalAligner]}>
                         <TouchableHighlight activeOpacity={0} onPress={(() => {this.handlePress.call(this, nursingMethods.left)}).bind(this)}>
                             <Text style={styles.button}>Left</Text>
                         </TouchableHighlight>
                     </View>
-                    <View style={styles.buttonVerticalAligner}>
+                    <View style={[styles.verticalAligner, styles.horizontalAligner]}>
                         <TouchableHighlight activeOpacity={0} onPress={(() => {this.handlePress.call(this, nursingMethods.food)}).bind(this)}>
                             <Text style={styles.button}>Food</Text>
                         </TouchableHighlight>
                     </View>
-                    <View style={styles.buttonVerticalAligner}>
+                    <View style={[styles.verticalAligner, styles.horizontalAligner]}>
                         <TouchableHighlight activeOpacity={0} onPress={(() => {this.handlePress.call(this, nursingMethods.bottle)}).bind(this)}>
                             <Text style={styles.button}>Bottle</Text>
                         </TouchableHighlight>
                     </View>
-                    <View style={styles.buttonVerticalAligner}>
+                    <View style={[styles.verticalAligner, styles.horizontalAligner]}>
                         <TouchableHighlight activeOpacity={0} onPress={(() => {this.handlePress.call(this, nursingMethods.right)}).bind(this)}>
                             <Text style={styles.button}>Right</Text>
                         </TouchableHighlight>
@@ -192,27 +240,40 @@ const styles = StyleSheet.create({
         justifyContent: 'space-around',
         backgroundColor: 'steelblue'
     },
-    buttonVerticalAligner: {
+    verticalAligner: {
         flex: 1,
         flexDirection: 'column',
-        justifyContent: 'center',
-        alignItems: 'center',
+        justifyContent: 'center'
+    },
+    horizontalAligner: {
+        alignItems: 'center'
     },
     feedingContainer: {
+        padding: 4,
         flex: 1,
         flexDirection: 'row'
     },
-    bottle: {
-        color: 'white'
+    feedingTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        borderBottomColor: 'black',
+        borderBottomWidth: 1,
+        padding: 4,
+        paddingTop: 8
     },
-    left: {
-        color: 'blue'
+    feedingTimes: {
+        fontWeight: 'bold',
     },
-    right: {
-        color: 'red'
+    feedingDuration: {
+
     },
-    food: {
-        color: 'green'
+    timingTitle: {
+        width: 100,
+        textAlign: 'center',
+        fontSize: 10,
+    },
+    flex3: {
+        flex: 3
     },
     button: {
         width: 60,
