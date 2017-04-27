@@ -1,111 +1,11 @@
 
 import React, { Component } from 'react';
-import { ScrollView, View, Text, StyleSheet, Button, TouchableHighlight } from 'react-native';
+import { ScrollView, View, Text, StyleSheet, Button, TouchableHighlight, AsyncStorage } from 'react-native';
+import { nursingMethods } from './utils/config';
+import Feeding from './components/Feeding';
+import FeedingTimer from './components/FeedingTimer';
 
-const nursingMethods = {
-    bottle: 'bottle',
-    left: 'left',
-    right: 'right',
-    food: 'food'
-};
-
-function _doubleDigit(n){
-    if(n < 10) {
-        return '0' + n.toString();
-    }
-    return n.toString();
-}
-
-class Feeding extends Component {
-
-    _getFeedingString(currentFeeding) {
-        var seconds = Math.floor(currentFeeding.length/1000);
-        var minutes = Math.floor(seconds/60);
-        seconds = seconds%60;
-        var hours = Math.floor(minutes/60);
-        minutes = minutes%60;
-
-        var startTime = currentFeeding.start,
-            startString = '',
-            endTime = currentFeeding.end,
-            endString = '';
-        startString += _doubleDigit(startTime.getHours()) + ':' + _doubleDigit(startTime.getMinutes());
-        if(!endTime){
-            endString = '-';
-        } else {
-            endString += _doubleDigit(endTime.getHours()) + ':' + _doubleDigit(endTime.getMinutes());
-        }
-
-        return (<View>
-            <Text style={styles.feedingTimes} key={currentFeeding.start.toString()}>{startString} - {endString}</Text>
-            <Text style={styles.feedingDuration}>Duration {_doubleDigit(hours)}:{_doubleDigit(minutes)}:{_doubleDigit(seconds)}</Text>
-        </View>);
-    }
-
-    render() {
-        let comp = this._getFeedingString(this.props.feeding);
-
-        let methodString = this.props.feeding.method.substr(0, 1).toUpperCase() + this.props.feeding.method.substr(1);
-        return (<View style={styles.feedingContainer}>
-            <View style={[styles.verticalAligner, styles.horizontalAligner]}>
-                <Text style={styles.button}>{methodString}</Text>
-            </View>
-            <View style={[styles.verticalAligner, styles.flex3]}>
-                {comp}
-            </View>
-        </View>);
-    }
-}
-
-class FeedingTimer extends Component {
-
-    constructor(){
-        super();
-        this.state = {
-            time: 0
-        }
-    }
-
-    componentDidMount() {
-        this.myInterval = setInterval(this._updateTimer.bind(this), 500);
-    }
-
-    componentWillUnmount() {
-        clearInterval(this.myInterval);
-    }
-
-    setNativeProps (nativeProps) {
-        this._root.setNativeProps(nativeProps);
-    }
-
-    _updateTimer() {
-        if(!this.props.current){
-            this.setState({
-                time: 0
-            });
-            return;
-        }
-        let delta = (new Date() - this.props.current);
-        var seconds = Math.floor(delta/1000);
-        var minutes = Math.floor(seconds/60);
-        seconds = seconds%60;
-        var hours = Math.floor(minutes/60);
-        minutes = minutes%60;
-        this.setState({
-            time: _doubleDigit(hours) + ':' + _doubleDigit(minutes) + ':' + _doubleDigit(seconds),
-        });
-    } 
-
-    render(){
-        if(!this.props.current || !this.state.time) {
-            return <Text ref={component => this._root = component} style={styles.timer}>00:00:00</Text>
-        }
-        return (<Text ref={component => this._root = component} style={styles.timer}>{this.state.time}</Text>)
-    }
-}
-
-
-export default class nurser extends Component {
+export default class Nurser extends Component {
 
     constructor() {
         super();
@@ -114,6 +14,31 @@ export default class nurser extends Component {
             currentMethod: null,
             feedings: []
         };
+    }
+
+    componentDidMount(){
+        AsyncStorage.getItem('@NurserStore:feedings', (err, res) => {
+            if(err){
+                console.log('Error while loading data.');
+                return;
+            }
+            if(!res){
+                console.log('No data was loaded.');
+                return;
+            }
+            let myFeedings = JSON.parse(res);
+
+            // Parse dates into date objects again.
+            for(var i = 0; i < myFeedings.length; i++){
+                myFeedings[i].start = new Date(myFeedings[i].start);
+                myFeedings[i].end = new Date(myFeedings[i].end);
+            }
+
+            this.setState({
+                feedings: myFeedings
+            });
+            console.log('Loaded feedings successfully');
+        });
     }
 
     _startFeeding(method) {
@@ -135,11 +60,20 @@ export default class nurser extends Component {
             end: now,
             length: now - this.state.start
         };
+        let newFeedings = this.state.feedings.slice(0);
+        newFeedings.unshift(feeding);
         this.setState({
             timing: false,
             start: null,
             currentMethod: null,
-            feedings: [...this.state.feedings, feeding]
+            feedings: newFeedings
+        });
+        AsyncStorage.setItem('@NurserStore:feedings', JSON.stringify(newFeedings), (err) => {
+            if(err){
+                console.log('Error saving feedings data.');
+                return;
+            }
+            console.log('Data saved');
         });
     }
 
@@ -155,12 +89,21 @@ export default class nurser extends Component {
         var feedings = [];
         let month = -1;
         let day = -1;
-        for(var i = this.state.feedings.length-1; i>= 0; i--){
-            var currentFeeding = this.state.feedings[i];
+        let feedingArray = this.state.feedings.slice(0);
+        if(this.state.timing){
+            feedingArray.push({
+                method: this.state.currentMethod,
+                start: this.state.start,
+                end: null,
+                length: null
+            });
+        }
+        for(var i = feedingArray.length-1; i>= 0; i--){
+            var currentFeeding = feedingArray[i];
             if(currentFeeding.start.getMonth() > month || currentFeeding.start.getDate() > day){
                 month = currentFeeding.start.getMonth();
                 day = currentFeeding.start.getDate();
-                feedings.push(<Text key={currentFeeding.end.toString()} style={styles.feedingTitle}>{currentFeeding.start.getMonth()+1}/{currentFeeding.start.getDate()}</Text>);
+                feedings.push(<Text key={currentFeeding.start.toString()} style={styles.feedingTitle}>{currentFeeding.start.getMonth()+1}/{currentFeeding.start.getDate()}</Text>);
             }
             feedings.push(<Feeding key={i+currentFeeding.start.toString()} feeding={currentFeeding} />);
         }
@@ -177,24 +120,19 @@ export default class nurser extends Component {
             timerText = 'Start feeding';
             feedingTimer = <FeedingTimer current={null} />;
         }
-
-        return (
-            <View style={styles.container}>
-                <View style={styles.feedingsList}>
-                    <ScrollView>
-                        {feedings}
-                    </ScrollView>
-                </View>
-                <View style={styles.middleBox}>
-                    <View style={styles.verticalAligner}>
-                        <TouchableHighlight onPress={this._endFeeding.bind(this)}>
-                            <View style={styles.horizontalAligner}>
-                                <Text style={styles.timerTitle}>{timerText}</Text>
-                                {feedingTimer}
-                            </View>
+        let buttonContainer;
+        if(this.state.timing){
+            buttonContainer = (
+                <View style={styles.buttonContainer}>
+                    <View style={[styles.verticalAligner, styles.horizontalAligner]}>
+                        <TouchableHighlight activeOpacity={0} onPress={this._endFeeding.bind(this)}>
+                            <Text style={styles.button}>Stop</Text>
                         </TouchableHighlight>
                     </View>
                 </View>
+            )
+        } else {
+            buttonContainer = (
                 <View style={styles.buttonContainer}>
                     <View style={[styles.verticalAligner, styles.horizontalAligner]}>
                         <TouchableHighlight activeOpacity={0} onPress={(() => {this.handlePress.call(this, nursingMethods.left)}).bind(this)}>
@@ -217,6 +155,27 @@ export default class nurser extends Component {
                         </TouchableHighlight>
                     </View>
                 </View>
+            );
+        }
+
+        return (
+            <View style={styles.container}>
+                <View style={styles.feedingsList}>
+                    <ScrollView>
+                        {feedings}
+                    </ScrollView>
+                </View>
+                <View style={styles.middleBox}>
+                    <View style={styles.verticalAligner}>
+                        <TouchableHighlight onPress={this._endFeeding.bind(this)}>
+                            <View style={styles.horizontalAligner}>
+                                <Text style={styles.timerTitle}>{timerText}</Text>
+                                {feedingTimer}
+                            </View>
+                        </TouchableHighlight>
+                    </View>
+                </View>
+                {buttonContainer}
             </View>
         );
     }
@@ -248,11 +207,6 @@ const styles = StyleSheet.create({
     horizontalAligner: {
         alignItems: 'center'
     },
-    feedingContainer: {
-        padding: 4,
-        flex: 1,
-        flexDirection: 'row'
-    },
     feedingTitle: {
         fontSize: 18,
         fontWeight: 'bold',
@@ -261,19 +215,10 @@ const styles = StyleSheet.create({
         padding: 4,
         paddingTop: 8
     },
-    feedingTimes: {
-        fontWeight: 'bold',
-    },
-    feedingDuration: {
-
-    },
     timingTitle: {
         width: 100,
         textAlign: 'center',
         fontSize: 10,
-    },
-    flex3: {
-        flex: 3
     },
     button: {
         width: 60,
@@ -283,9 +228,4 @@ const styles = StyleSheet.create({
         backgroundColor: 'white',
         borderRadius: 30
     },
-    timer: {
-        width: '100%',
-        fontSize: 42,
-        textAlign: 'center'
-    }
 })
