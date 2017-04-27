@@ -4,6 +4,35 @@ import { doubleDigit } from '../utils/utils';
 
 export default class Feeding extends Component {
 
+    constructor(){
+        super();
+        this.state = {
+            delete: false
+        }
+    }
+
+    _disableDeletion(){
+        this.setState({
+            delete: false
+        });
+    }
+
+    _delete() {
+        if(this.state.delete){
+            this.props.delete(this.props.id);
+            return;
+        }
+        this.setState({
+            delete: true
+        });
+
+        this.cancelDeleteTimeout = setTimeout(_disableDeletion.bind(this), 5000);
+    }
+
+    componentWillUnmount(){
+        clearTimeout(this.cancelDeleteTimeout);
+    }
+
     _getLengthString(length){
         if(!length){
             return 'Ongoing...';

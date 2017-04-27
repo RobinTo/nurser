@@ -85,6 +85,14 @@ export default class Nurser extends Component {
         }
     }
 
+    deleteFeeding(index){
+        let newFeedings = this.state.feedings.slice(0);
+        newFeedings.splice(index, 1);
+        this.setState({
+            feedings: newFeedings
+        });
+    }
+
     render() {
         var feedings = [];
         let month = -1;
@@ -105,7 +113,7 @@ export default class Nurser extends Component {
                 day = currentFeeding.start.getDate();
                 feedings.push(<Text key={currentFeeding.start.toString()} style={styles.feedingTitle}>{currentFeeding.start.getMonth()+1}/{currentFeeding.start.getDate()}</Text>);
             }
-            feedings.push(<Feeding key={i+currentFeeding.start.toString()} feeding={currentFeeding} />);
+            feedings.push(<Feeding id={this.state.timing ? i-1 : i} delete={this.deleteFeeding.bind(this)} key={i+currentFeeding.start.toString()} feeding={currentFeeding} />);
         }
 
         let feedingTimer = null,
