@@ -18,6 +18,9 @@ export default class Feeding extends Component {
     }
 
     _delete() {
+        if(this.props.noDelete){
+            return;
+        }
         if(this.state.delete){
             this.props.delete(this.props.id);
             clearTimeout(this.cancelDeleteTimeout);
@@ -62,7 +65,7 @@ export default class Feeding extends Component {
         let durationString = this._getLengthString(currentFeeding.length);
 
         return (<View>
-            <Text style={styles.feedingTimes} key={currentFeeding.start.toString()}>{startString} - {endString}</Text>
+            <Text style={styles.feedingTimes}>{startString} - {endString}</Text>
             <Text style={styles.feedingDuration}>{durationString}</Text>
         </View>);
     }

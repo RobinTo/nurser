@@ -90,7 +90,6 @@ export default class Nurser extends Component {
     }
 
     deleteFeeding(index){
-        console.log('Trying to delete at index', index);
         let newFeedings = this.state.feedings.slice(0);
         newFeedings.splice(index, 1);
         this.setState({
@@ -109,7 +108,8 @@ export default class Nurser extends Component {
                 method: this.state.currentMethod,
                 start: this.state.start,
                 end: null,
-                length: null
+                length: null,
+                noDelete: true,
             });
         }
         for(var i = feedingArray.length-1; i>= 0; i--){
@@ -117,9 +117,9 @@ export default class Nurser extends Component {
             if(currentFeeding.start.getMonth() > month || currentFeeding.start.getDate() > day){
                 month = currentFeeding.start.getMonth();
                 day = currentFeeding.start.getDate();
-                feedings.push(<Text key={currentFeeding.start.toString()} style={styles.feedingTitle}>{currentFeeding.start.getMonth()+1}/{currentFeeding.start.getDate()}</Text>);
+                feedings.push(<Text key={'title'+currentFeeding.start.toISOString()} style={styles.feedingTitle}>{currentFeeding.start.getMonth()+1}/{currentFeeding.start.getDate()}</Text>);
             }
-            feedings.push(<Feeding id={this.state.timing ? i-1 : i} delete={this.deleteFeeding.bind(this)} key={i+currentFeeding.start.toString()} feeding={currentFeeding} />);
+            feedings.push(<Feeding id={i} delete={this.deleteFeeding.bind(this)} key={currentFeeding.start.toISOString()} feeding={currentFeeding} />);
         }
 
         let feedingTimer = null,
