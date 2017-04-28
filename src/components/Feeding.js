@@ -80,7 +80,7 @@ export default class Feeding extends Component {
         }
         return (<View style={styles.feedingContainer}>
             <View style={[styles.verticalAligner, styles.horizontalAligner]}>
-                <TouchableHighlight onPress={this._delete.bind(this)}>
+                <TouchableHighlight underlayColor={'transparent'} onPress={this._delete.bind(this)}>
                     <Text style={methodStyles}>{methodString}</Text>
                 </TouchableHighlight>
             </View>

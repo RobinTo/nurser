@@ -126,13 +126,13 @@ export default class Nurser extends Component {
             timerText = '';
         if(this.state.timing){
             timerText = 'Current feeding';
-            feedingTimer = <FeedingTimer current={this.state.start} />;
+            feedingTimer = <FeedingTimer active={this.state.timing} current={this.state.start} />;
         } else if (this.state.feedings.length > 0){
             timerText = 'Time since last feeding';
-            feedingTimer = <FeedingTimer current={this.state.feedings.slice(-1)[0].end} />;
+            feedingTimer = <FeedingTimer active={this.state.timing} current={this.state.feedings.slice(-1)[0].end} />;
         } else {
             timerText = 'Start feeding';
-            feedingTimer = <FeedingTimer current={null} />;
+            feedingTimer = <FeedingTimer active={this.state.timing} current={null} />;
         }
         let buttonContainer;
         if(this.state.timing){

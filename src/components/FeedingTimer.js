@@ -45,7 +45,11 @@ export default class FeedingTimer extends Component {
         if(!this.props.current || !this.state.time) {
             return <Text ref={component => this._root = component} style={styles.timer}>00:00:00</Text>
         }
-        return (<Text ref={component => this._root = component} style={styles.timer}>{this.state.time}</Text>)
+        let timerStyles = [styles.timer];
+        if(this.props.active){
+            timerStyles.push(styles.active);
+        }
+        return (<Text ref={component => this._root = component} style={timerStyles}>{this.state.time}</Text>)
     }
 }
 
@@ -54,5 +58,8 @@ const styles = StyleSheet.create({
         width: '100%',
         fontSize: 42,
         textAlign: 'center'
+    },
+    active: {
+        color: '#66ff00',
     }
 })
