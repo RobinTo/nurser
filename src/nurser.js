@@ -68,7 +68,11 @@ export default class Nurser extends Component {
             currentMethod: null,
             feedings: newFeedings
         });
-        AsyncStorage.setItem('@NurserStore:feedings', JSON.stringify(newFeedings), (err) => {
+        this._saveFeedings(newFeedings);
+    }
+
+    _saveFeedings(feedings=this.state.feedings){
+        AsyncStorage.setItem('@NurserStore:feedings', JSON.stringify(feedings), (err) => {
             if(err){
                 console.log('Error saving feedings data.');
                 return;
@@ -86,11 +90,13 @@ export default class Nurser extends Component {
     }
 
     deleteFeeding(index){
+        console.log('Trying to delete at index', index);
         let newFeedings = this.state.feedings.slice(0);
         newFeedings.splice(index, 1);
         this.setState({
             feedings: newFeedings
         });
+        this._saveFeedings(newFeedings);
     }
 
     render() {

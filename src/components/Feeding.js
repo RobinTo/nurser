@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, TouchableHighlight } from 'react-native';
 import { doubleDigit } from '../utils/utils';
 
 export default class Feeding extends Component {
@@ -20,13 +20,14 @@ export default class Feeding extends Component {
     _delete() {
         if(this.state.delete){
             this.props.delete(this.props.id);
+            clearTimeout(this.cancelDeleteTimeout);
             return;
         }
         this.setState({
             delete: true
         });
 
-        this.cancelDeleteTimeout = setTimeout(_disableDeletion.bind(this), 5000);
+        this.cancelDeleteTimeout = setTimeout(this._disableDeletion.bind(this), 5000);
     }
 
     componentWillUnmount(){
@@ -69,10 +70,19 @@ export default class Feeding extends Component {
     render() {
         let comp = this._getFeedingString(this.props.feeding);
 
-        let methodString = this.props.feeding.method.substr(0, 1).toUpperCase() + this.props.feeding.method.substr(1);
+        let methodString,
+            methodStyles = [styles.button];
+        if(this.state.delete){
+            methodStyles.push(styles.redButton);
+            methodString = 'X';
+        } else {
+            methodString = this.props.feeding.method.substr(0, 1).toUpperCase() + this.props.feeding.method.substr(1);
+        }
         return (<View style={styles.feedingContainer}>
             <View style={[styles.verticalAligner, styles.horizontalAligner]}>
-                <Text style={styles.button}>{methodString}</Text>
+                <TouchableHighlight onPress={this._delete.bind(this)}>
+                    <Text style={methodStyles}>{methodString}</Text>
+                </TouchableHighlight>
             </View>
             <View style={[styles.verticalAligner, styles.flex3]}>
                 {comp}
@@ -102,6 +112,11 @@ const styles = StyleSheet.create({
         lineHeight: 38,
         backgroundColor: 'white',
         borderRadius: 30
+    },
+    redButton: {
+        backgroundColor: 'red',
+        color: 'white',
+        fontWeight: 'bold',
     },
     flex3: {
         flex: 3
