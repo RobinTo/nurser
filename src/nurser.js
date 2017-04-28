@@ -139,7 +139,7 @@ export default class Nurser extends Component {
             buttonContainer = (
                 <View style={styles.buttonContainer}>
                     <View style={[styles.verticalAligner, styles.horizontalAligner]}>
-                        <TouchableHighlight activeOpacity={0} onPress={this._endFeeding.bind(this)}>
+                        <TouchableHighlight underlayColor={'transparent'} onPress={this._endFeeding.bind(this)}>
                             <Text style={styles.button}>Stop</Text>
                         </TouchableHighlight>
                     </View>
@@ -149,22 +149,22 @@ export default class Nurser extends Component {
             buttonContainer = (
                 <View style={styles.buttonContainer}>
                     <View style={[styles.verticalAligner, styles.horizontalAligner]}>
-                        <TouchableHighlight activeOpacity={0} onPress={(() => {this.handlePress.call(this, nursingMethods.left)}).bind(this)}>
+                        <TouchableHighlight underlayColor={'transparent'} onPress={(() => {this.handlePress.call(this, nursingMethods.left)}).bind(this)}>
                             <Text style={styles.button}>Left</Text>
                         </TouchableHighlight>
                     </View>
                     <View style={[styles.verticalAligner, styles.horizontalAligner]}>
-                        <TouchableHighlight activeOpacity={0} onPress={(() => {this.handlePress.call(this, nursingMethods.food)}).bind(this)}>
+                        <TouchableHighlight underlayColor={'transparent'} onPress={(() => {this.handlePress.call(this, nursingMethods.food)}).bind(this)}>
                             <Text style={styles.button}>Food</Text>
                         </TouchableHighlight>
                     </View>
                     <View style={[styles.verticalAligner, styles.horizontalAligner]}>
-                        <TouchableHighlight activeOpacity={0} onPress={(() => {this.handlePress.call(this, nursingMethods.bottle)}).bind(this)}>
+                        <TouchableHighlight underlayColor={'transparent'} onPress={(() => {this.handlePress.call(this, nursingMethods.bottle)}).bind(this)}>
                             <Text style={styles.button}>Bottle</Text>
                         </TouchableHighlight>
                     </View>
                     <View style={[styles.verticalAligner, styles.horizontalAligner]}>
-                        <TouchableHighlight activeOpacity={0} onPress={(() => {this.handlePress.call(this, nursingMethods.right)}).bind(this)}>
+                        <TouchableHighlight underlayColor={'transparent'} onPress={(() => {this.handlePress.call(this, nursingMethods.right)}).bind(this)}>
                             <Text style={styles.button}>Right</Text>
                         </TouchableHighlight>
                     </View>
@@ -240,6 +240,6 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         lineHeight: 38,
         backgroundColor: 'white',
-        borderRadius: 30
+        borderRadius: 30,
     },
 })
