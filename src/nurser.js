@@ -1,88 +1,31 @@
 
 import React, { Component } from 'react';
 import { ScrollView, View, Text, StyleSheet, Button, TouchableHighlight, AsyncStorage } from 'react-native';
+import { connect } from 'react-redux';
+import { bindActionCreators } from 'redux';
 import { nursingMethods } from './utils/config';
 import Feeding from './components/Feeding';
 import FeedingTimer from './components/FeedingTimer';
 
-export default class Nurser extends Component {
+import * as actionCreators from './redux/actionCreators';
+
+import { saveItem, getItem } from './utils/storage';
+
+class Nurser extends Component {
 
     constructor() {
         super();
-        this.state = {
-            timing: false,
-            currentMethod: null,
-            feedings: []
-        };
     }
-
-    componentDidMount(){
-        AsyncStorage.getItem('@NurserStore:feedings', (err, res) => {
-            if(err){
-                console.log('Error while loading data.');
-                return;
-            }
-            if(!res){
-                console.log('No data was loaded.');
-                return;
-            }
-            let myFeedings = JSON.parse(res);
-
-            // Parse dates into date objects again.
-            for(var i = 0; i < myFeedings.length; i++){
-                myFeedings[i].start = new Date(myFeedings[i].start);
-                myFeedings[i].end = new Date(myFeedings[i].end);
-            }
-
-            this.setState({
-                feedings: myFeedings
-            });
-            console.log('Loaded feedings successfully');
-        });
-    }
-
     _startFeeding(method) {
-        this.setState({
-            timing: true,
-            currentMethod: method,
-            start: new Date()
-        });
+        this.props.startFeeding(method);
     }
 
     _endFeeding(){
-        if(!this.state.timing){
-            return;
-        }
-        var now = new Date();
-        var feeding = {
-            method: this.state.currentMethod,
-            start: this.state.start,
-            end: now,
-            length: now - this.state.start
-        };
-        let newFeedings = this.state.feedings.slice(0);
-        newFeedings.push(feeding);
-        this.setState({
-            timing: false,
-            start: null,
-            currentMethod: null,
-            feedings: newFeedings
-        });
-        this._saveFeedings(newFeedings);
-    }
-
-    _saveFeedings(feedings=this.state.feedings){
-        AsyncStorage.setItem('@NurserStore:feedings', JSON.stringify(feedings), (err) => {
-            if(err){
-                console.log('Error saving feedings data.');
-                return;
-            }
-            console.log('Data saved');
-        });
+        this.props.stopFeeding();
     }
 
     handlePress(side){
-        if(this.state.timing){
+        if(this.props.timing){
             this._endFeeding();
         } else {
             this._startFeeding(side);
@@ -90,23 +33,18 @@ export default class Nurser extends Component {
     }
 
     deleteFeeding(index){
-        let newFeedings = this.state.feedings.slice(0);
-        newFeedings.splice(index, 1);
-        this.setState({
-            feedings: newFeedings
-        });
-        this._saveFeedings(newFeedings);
+        this.props.deleteFeeding(index);
     }
 
     render() {
         var feedings = [];
-        let month = -1;
-        let day = -1;
-        let feedingArray = this.state.feedings.slice(0);
-        if(this.state.timing){
+        let month = null;
+        let day = null;
+        let feedingArray = this.props.feedings.slice(0);
+        if(this.props.timing){
             feedingArray.push({
-                method: this.state.currentMethod,
-                start: this.state.start,
+                method: this.props.currentMethod,
+                start: this.props.start,
                 end: null,
                 length: null,
                 noDelete: true,
@@ -114,7 +52,7 @@ export default class Nurser extends Component {
         }
         for(var i = feedingArray.length-1; i>= 0; i--){
             var currentFeeding = feedingArray[i];
-            if(currentFeeding.start.getMonth() > month || currentFeeding.start.getDate() > day){
+            if((!month || !day) || (currentFeeding.start.getMonth() < month || currentFeeding.start.getDate() < day)){
                 month = currentFeeding.start.getMonth();
                 day = currentFeeding.start.getDate();
                 feedings.push(<Text key={'title'+currentFeeding.start.toISOString()} style={styles.feedingTitle}>{currentFeeding.start.getMonth()+1}/{currentFeeding.start.getDate()}</Text>);
@@ -124,18 +62,18 @@ export default class Nurser extends Component {
 
         let feedingTimer = null,
             timerText = '';
-        if(this.state.timing){
+        if(this.props.timing){
             timerText = 'Current feeding';
-            feedingTimer = <FeedingTimer active={this.state.timing} current={this.state.start} />;
-        } else if (this.state.feedings.length > 0){
+            feedingTimer = <FeedingTimer active={this.props.timing} current={this.props.start} />;
+        } else if (this.props.feedings.length > 0){
             timerText = 'Time since last feeding';
-            feedingTimer = <FeedingTimer active={this.state.timing} current={this.state.feedings.slice(-1)[0].end} />;
+            feedingTimer = <FeedingTimer active={this.props.timing} current={this.props.feedings.slice(-1)[0].end} />;
         } else {
             timerText = 'Start feeding';
-            feedingTimer = <FeedingTimer active={this.state.timing} current={null} />;
+            feedingTimer = <FeedingTimer active={this.props.timing} current={null} />;
         }
         let buttonContainer;
-        if(this.state.timing){
+        if(this.props.timing){
             buttonContainer = (
                 <View style={styles.buttonContainer}>
                     <View style={[styles.verticalAligner, styles.horizontalAligner]}>
@@ -194,6 +132,21 @@ export default class Nurser extends Component {
         );
     }
 }
+
+function mapStateToProps(state, ownProps){
+    return {
+        feedings: state.feedings,
+        currentMethod: state.currentMethod,
+        start: state.start,
+        timing: state.timing,
+    }
+}
+
+function mapDispatchToProps(dispatch){
+    return bindActionCreators(actionCreators, dispatch);
+}
+
+export default connect(mapStateToProps, mapDispatchToProps)(Nurser);
 
 const styles = StyleSheet.create({
     container: {

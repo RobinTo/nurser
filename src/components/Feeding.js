@@ -18,7 +18,7 @@ export default class Feeding extends Component {
     }
 
     _delete() {
-        if(this.props.noDelete){
+        if(this.props.feeding.noDelete){
             return;
         }
         if(this.state.delete){

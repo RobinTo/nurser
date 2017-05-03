@@ -1,0 +1,5 @@
+export default actionTypes = {
+    START_FEEDING: 'START_FEEDING',
+    STOP_FEEDING: 'STOP_FEEDING',
+    DELETE_FEEDING: 'DELETE_FEEDING',
+}

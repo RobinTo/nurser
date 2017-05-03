@@ -11,14 +11,18 @@ import {
   Text,
   View
 } from 'react-native';
+import { Provider } from 'react-redux';
 import Nurser from './src/nurser';
+import Store from './src/createStore';
 
 export default class nurser extends Component {
   render() {
     return (
-      <View style={{flex: 1}}>
-        <Nurser />
-      </View>
+      <Provider store={Store}>
+        <View style={{flex: 1}}>
+          <Nurser />
+        </View>
+      </Provider>
     );
   }
 }
